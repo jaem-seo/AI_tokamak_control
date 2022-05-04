@@ -11,7 +11,7 @@ $ git clone https://github.com/jaem-seo/AI_tokamak_control.git
 $ cd AI_tokamak_control
 ```
 
-# 1. Target arrival for 4 s interval
+# 1. Target arrival in 4 s interval
 - Open the GUI. It takes a bit depending on your environment.
 ```
 $ python ai_control_v0.py
@@ -25,7 +25,7 @@ $ python ai_control_v1.py
 </p>
 
 - Slide the toggles in the right side to change the target state and press the "AI control" button (it takes a bit).
-- Then, the AI will design the tokamak operation trajectory to achieve the target you set.
+- Then, the AI will design the tokamak operation trajectory to achieve the given target in 4 s.
 
 # 2. Real-time target tracking
 - Open the GUI. It takes a bit depending on your environment.
@@ -45,7 +45,7 @@ $ python rt_control_v1.py
 
 # Note
 - The AI was trained by reinforcement learning; [TD3](https://arxiv.org/abs/1802.09477), [HER](https://arxiv.org/abs/1707.01495) implementation from [Stable Baselines](https://github.com/hill-a/stable-baselines).
-- The tokamak simulation and the plotting possess most of the computation time, and the AI operation control is very fast (real-time capable in experiments).
+- The tokamak simulation possesses most of the computation time, but the AI operation control is actually very fast (real-time capable in experiments).
 - Deployment on the KSTAR PCS control system will require further development.
 
 # References
