@@ -49,9 +49,9 @@ $ python rt_control_v1.py
 - Deployment on the KSTAR PCS control system will require further development.
 
 # References
-- [A. Hill et al. "Stable Baselines." GitHub repository (2018).](https://github.com/hill-a/stable-baselines)
-- [S. Fujimoto et al. "Addressing Function Approximation Error in Actor-Critic Methods." ICML (2018).](https://arxiv.org/abs/1802.09477)
-- [M. Andrychowicz et al. "Hindsight Experience Replay." NIPS (2017).](https://arxiv.org/abs/1707.01495)
-- [J. Seo, "KSTAR tokamak simulator." GitHub repository (2022).](https://github.com/jaem-seo/KSTAR_tokamak_simulator)
-- [J. Seo, et al. "Feedforward beta control in the KSTAR tokamak by deep reinforcement learning." Nuclear Fusion 61.10 (2021): 106010.](https://iopscience.iop.org/article/10.1088/1741-4326/ac121b/meta)
+- A. Hill et al. "[Stable Baselines.](https://github.com/hill-a/stable-baselines)" GitHub repository (2018).
+- S. Fujimoto et al. "[Addressing Function Approximation Error in Actor-Critic Methods.](https://arxiv.org/abs/1802.09477)" ICML (2018).
+- M. Andrychowicz et al. "[Hindsight Experience Replay.](https://arxiv.org/abs/1707.01495)" NIPS (2017).
+- J. Seo, "[KSTAR tokamak simulator.](https://github.com/jaem-seo/KSTAR_tokamak_simulator)" GitHub repository (2022).
+- J. Seo, et al. "Feedforward beta control in the KSTAR tokamak by deep reinforcement learning." Nuclear Fusion [61.10 (2021): 106010.](https://iopscience.iop.org/article/10.1088/1741-4326/ac121b/meta)
 - J. Seo, et al. Nuclear Fusion (2022) (In review).
