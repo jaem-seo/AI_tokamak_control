@@ -228,14 +228,17 @@ class KSTARWidget(QDialog):
         self.createAutonomousBox()
 
         # Bottom layout
-        self.run1sButton = QPushButton('▶▶ 1s ▶▶')
-        self.run1sButton.setFixedWidth(320)
+        self.run1sButton = QPushButton('Relax 1s')
+        self.run1sButton.setFixedWidth(200)
         self.run1sButton.clicked.connect(self.relaxRun1s)
-        self.run2sButton = QPushButton('▶▶ 2s ▶▶')
-        self.run2sButton.setFixedWidth(320)
-        self.run2sButton.clicked.connect(self.relaxRun2s)
+        self.control1sButton = QPushButton('Control 1s')
+        self.control1sButton.setFixedWidth(200)
+        self.control1sButton.clicked.connect(self.control1s)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(self.run1sButton)
+        buttonLayout.addWidget(self.control1sButton)
         self.dumpButton = QPushButton('Dump outputs')
-        self.dumpButton.setFixedWidth(800)
+        self.dumpButton.setFixedWidth(400)
         self.dumpButton.clicked.connect(self.dumpOutput)
         self.autoButton = QPushButton('AI control')
         self.autoButton.setFixedWidth(120)
@@ -249,11 +252,10 @@ class KSTARWidget(QDialog):
             self.mainLayout.addWidget(self.inputBox,1,0)
         self.mainLayout.addWidget(self.outputBox,1,0+self.showInputCheckBox.isChecked(),1,2)
         self.mainLayout.addWidget(self.autonomousBox,1,2+self.showInputCheckBox.isChecked())
-        #self.mainLayout.addWidget(self.run1sButton,2,0)
-        #self.mainLayout.addWidget(self.run2sButton,2,1)
         self.mainLayout.addWidget(self.dumpButton,2,0)
+        self.mainLayout.addLayout(buttonLayout,2,1)
         self.mainLayout.addWidget(self.autoButton,2,2)
-        
+
         self.setLayout(self.mainLayout)
         self.setWindowTitle("Real-time AI-controlled KSTAR tokamak v0")
         self.tmp = 0
@@ -705,10 +707,11 @@ class KSTARWidget(QDialog):
         self.reCreateOutputBox()
         self.tmp = time.time()
 
-    def relaxRun2s(self):
-        for i in range(20 - 1):
+    def control1s(self):
+        for i in range(10 - 1):
+            self.autoControl()
             self.predict0d(steady = self.first or steady_model)
-        self.reCreateOutputBox()
+        self.updateTargets()
         self.tmp = time.time()
 
     def dumpOutput(self):
