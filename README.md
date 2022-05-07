@@ -46,8 +46,9 @@ $ python rt_control_v1.py
 
 # Note
 - The AI was trained by reinforcement learning; [TD3](https://arxiv.org/abs/1802.09477), [HER](https://arxiv.org/abs/1707.01495) implementation from [Stable Baselines](https://github.com/hill-a/stable-baselines).
+- The AI control can fail if the target state is physically unfeasible (ex. high-βp, low-q95 and high-li).
 - The tokamak simulation possesses most of the computation time, but the AI operation control is actually very fast (real-time capable in experiments).
-- Deployment on the KSTAR PCS control system will require further development.
+- Deployment on the KSTAR control system will require further development.
 
 # References
 - A. Hill et al. ["Stable Baselines."](https://github.com/hill-a/stable-baselines) GitHub repository (2018).
