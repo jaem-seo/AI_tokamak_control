@@ -1,5 +1,5 @@
 # AI control of tokamak fusion reactor
-- KSTAR is a tokamak (donut-shaped nuclear fusion device) located in South Korea.
+- KSTAR is a tokamak (donut-shaped nuclear fusion reactor) located in South Korea.
 - This repository provides an AI that designs the tokamak operation trajectory to control the fusion plasma in KSTAR.
 - Here, we would like to control 3 physics parameters; βp, q95 and li.
 - I recommend you to see [KSTAR Tokamak Simulator](https://github.com/jaem-seo/KSTAR_tokamak_simulator) first.
