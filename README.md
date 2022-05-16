@@ -1,9 +1,8 @@
 # AI control of tokamak fusion reactor
 - KSTAR is a tokamak (donut-shaped nuclear fusion reactor) located in South Korea.
-- This repository provides an AI that designs the tokamak operation trajectory to control the fusion plasma in KSTAR.
+- This repository describes an AI that designs the tokamak operation trajectory to control the fusion plasma in KSTAR.
 - Here, we would like to control 3 physics parameters; βp, q95 and li.
-- I recommend you to see [KSTAR Tokamak Simulator](https://github.com/jaem-seo/KSTAR_tokamak_simulator) first.
-- The manual control in [KSTAR Tokamak Simulator](https://github.com/jaem-seo/KSTAR_tokamak_simulator) is replaced by AI here.
+- I recommend you to see [KSTAR Tokamak Simulator](https://github.com/jaem-seo/KSTAR_tokamak_simulator) first. The manual control of it is replaced by AI here.
 
 # Installation
 - You can install by
@@ -13,7 +12,7 @@ $ cd AI_tokamak_control
 ```
 
 # 1. Target arrival in 4 s interval
-- Open the GUI. It takes a bit depending on your environment.
+- Open the GUI. It takes a bit (tens of secconds) depending on your environment.
 ```
 $ python ai_control_v0.py
 ```
@@ -25,11 +24,11 @@ $ python ai_control_v1.py
   <img src="https://user-images.githubusercontent.com/46472432/166656005-c37156f7-a7a4-4e2c-b714-e0a6319387f7.png">
 </p>
 
-- Slide the toggles in the right side to change the target state and press the "AI control" button (it takes a bit).
+- Slide the toggles on the right to change the targets and click the "AI control" button (it takes tens of seconds).
 - Then, the AI will design the tokamak operation trajectory to achieve the given target in 4 s.
 
 # 2. Real-time feedback target tracking
-- Open the GUI. It takes a bit depending on your environment.
+- Open the GUI. It takes a bit (tens of secconds) depending on your environment.
 ```
 $ python rt_control_v2.py
 ```
@@ -37,8 +36,8 @@ $ python rt_control_v2.py
   <img src="https://user-images.githubusercontent.com/46472432/168571826-9464756c-cd0b-4430-90db-4139d177082c.png">
 </p>
 
-- Slide the toggles in the right side to change the target state.
-- Then, the AI will adjust the tokamak operation to track the targets in real-time.
+- Slide the toggles on the right to change the target state.
+- Then, the AI will control the tokamak operation to track the targets in real-time.
 
 # Note
 - The AI was trained by reinforcement learning; [TD3](https://arxiv.org/abs/1802.09477) and [HER](https://arxiv.org/abs/1707.01495) implementation from [Stable Baselines](https://github.com/hill-a/stable-baselines).
