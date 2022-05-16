@@ -28,24 +28,20 @@ $ python ai_control_v1.py
 - Slide the toggles in the right side to change the target state and press the "AI control" button (it takes a bit).
 - Then, the AI will design the tokamak operation trajectory to achieve the given target in 4 s.
 
-# 2. Real-time target tracking
+# 2. Real-time feedback target tracking
 - Open the GUI. It takes a bit depending on your environment.
 ```
-$ python rt_control_v0.py
-```
-or
-```
-$ python rt_control_v1.py
+$ python rt_control_v2.py
 ```
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/46472432/166666842-0b6ae5d9-1621-4f03-87a0-386ff2931468.png">
+  <img src="https://user-images.githubusercontent.com/46472432/168571826-9464756c-cd0b-4430-90db-4139d177082c.png">
 </p>
 
 - Slide the toggles in the right side to change the target state.
 - Then, the AI will adjust the tokamak operation to track the targets in real-time.
 
 # Note
-- The AI was trained by reinforcement learning; [TD3](https://arxiv.org/abs/1802.09477), [HER](https://arxiv.org/abs/1707.01495) implementation from [Stable Baselines](https://github.com/hill-a/stable-baselines).
+- The AI was trained by reinforcement learning; [TD3](https://arxiv.org/abs/1802.09477) and [HER](https://arxiv.org/abs/1707.01495) implementation from [Stable Baselines](https://github.com/hill-a/stable-baselines).
 - The AI control can fail if the target state is physically unfeasible (ex. high-βp, low-q95 and high-li).
 - The tokamak simulation possesses most of the computation time, but the AI operation control is actually very fast (real-time capable in experiments).
 - Deployment on the KSTAR control system will require further development.
