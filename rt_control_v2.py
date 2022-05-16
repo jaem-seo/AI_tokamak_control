@@ -38,24 +38,20 @@ from common.wall import *
 from common.setting import *
 
 # Setting
+wide = True
 base_path = os.path.abspath(os.path.dirname(sys.argv[0]))
-background_path   = base_path + '/images/insideKSTAR.jpg'
-lstm_model_path   = base_path + '/weights/lstm/'
-nn_model_path     = base_path + '/weights/nn/'
-bpw_model_path    = base_path + '/weights/bpw/'
-k2rz_model_path   = base_path + '/weights/k2rz/'
-rl_1s_model_path  = base_path + '/weights/rl/nbi_control/interval_1s/best_model0.zip'
-rl_2s_model_path  = base_path + '/weights/rl/nbi_control/interval_2s/best_model0.zip'
-rl_k2x_model_path = base_path + '/weights/rl/k2x/TD3_test_model_1.zip'
+kstar_img_path = base_path + '/images/insideKSTAR.jpg'
 max_models = 10
-init_models = 4
+init_models = 1
 max_shape_models = 4
+seq_len = 10
 decimals = np.log10(1000)
 dpi = 1
-plot_length = 165
-t_delay = 0.002
+plot_length = 40
+t_delay = 0.05
 steady_model = False
-bavg = 0.0
+lookback = 3
+show_inputs = False
 
 # Fixed setting
 year_in = 2021
@@ -64,25 +60,36 @@ ec_freq = 105.e9
 # Matplotlib rcParams setting
 rcParamsSetting(dpi)
 
+# Path of weights
+lstm_model_path = base_path + '/weights/lstm/v220505/'
+nn_model_path   = base_path + '/weights/nn/'
+bpw_model_path  = base_path + '/weights/bpw/'
+k2rz_model_path = base_path + '/weights/k2rz/'
+rl_model_path   = base_path + '/weights/rl/rt_control/3frame_v220505/best_model.zip' if wide else base_path + '/weights/rl/rt_control/3frame/best_model1.zip'
+
 # RL setting
-interval = 20
-low_state   = [0.35, 1.65, 0.15, 0.5, 1.265, 2.18, 0.0, 0.0, 0.0, 1.1, 3.8, 0.84, 1.1, 3.8, 0.84]
-high_state  = [0.75, 1.9, 0.5, 0.85, 1.36, 2.29, 1.75, 1.75, 1.1, 2.1, 6.2, 1.06, 2.1, 6.2, 1.06]
-low_action  = [0.35, 1.65, 0.15, 0.5, 1.265, 2.18, 0.0, 0.0, 0.0]
-high_action = [0.75, 1.9, 0.5, 0.85, 1.36, 2.29, 1.75, 1.75, 1.1]
-low_state_k2x   = [0.4, 0.5, 1.265, 2.18, 1.6, 0.1, 0.55]
-high_state_k2x  = [0.8, 3.0, 1.34, 2.29, 1.9, 0.5, 0.95]
-low_action_k2x  = [1.35, 0.7, -0.05]
-high_action_k2x = [1.60, 1.05, 0.0]
+if wide:
+    low_target  = [0.8,4.0,0.80]
+    high_target = [2.1,7.0,1.05]
+    low_action  = [0.3, 0.0, 0.0,0.0, 1.6,0.15,0.5 ,1.265,2.14]
+    high_action = [0.8,1.75,1.75,1.5,1.95, 0.5,0.85, 1.36, 2.3]
+else:
+    low_target  = [1.1,3.8,0.84]
+    high_target = [2.1,6.2,1.06]
+    low_action  = [0.35, 0.0, 0.0,0.0,1.65,0.15, 0.5,1.265,2.18]
+    high_action = [0.75,1.75,1.75,1.5,1.95, 0.5,0.85, 1.36,2.29]
+
+low_state  = (low_action + low_target) * lookback + low_target
+high_state = (high_action + high_target) * lookback + high_target
 
 # Inputs
 input_params = ['Ip [MA]','Bt [T]','GW.frac. [-]',\
                 'Pnb1a [MW]','Pnb1b [MW]','Pnb1c [MW]',\
                 'Pec2 [MW]','Pec3 [MW]','Zec2 [cm]','Zec3 [cm]',\
                 'In.Mid. [m]','Out.Mid. [m]','Elon. [-]','Up.Tri. [-]','Lo.Tri. [-]']
-input_mins = [0.3,1.5,0.2, 0.0, 0.0, 0.0, 0.0,0.0,-10,-10, 1.265,2.18,1.6,0.1,0.5 ]
-input_maxs = [0.8,2.7,0.6, 1.75,1.75,1.5, 0.8,0.8, 10, 10, 1.36, 2.29,2.0,0.5,0.9 ]
-input_init = [0.5,1.8,0.3, 1.5, 1.5, 0.5, 0.0,0.0,0.0,0.0, 1.32, 2.22,1.7,0.3,0.75]
+input_mins = [0.3,1.5,0.2,  0.0, 0.0, 0.0, 0.0,0.0,-10,-10, 1.265,2.18,1.6,0.1,0.5 ]
+input_maxs = [0.8,2.7,0.6,  1.75,1.75,1.5, 0.8,0.8, 10, 10, 1.36, 2.29,2.0,0.5,0.9 ]
+input_init = [0.5,1.8,0.33, 1.5, 1.5, 0.5, 0.0,0.0,0.0,0.0, 1.32, 2.22,1.7,0.3,0.75]
 
 # Outputs
 output_params0 = ['βn','q95','q0','li']
@@ -92,9 +99,14 @@ dummy_params = ['Ip [MA]', 'Elon. [-]', 'Up.Tri. [-]', 'Lo.Tri. [-]', 'In.Mid. [
 
 # Targets
 target_params = ['βp','q95','li']
-target_mins   = [ 1.1,  3.8,0.84]
-target_maxs   = [ 2.1,  6.2,1.06]
-target_init   = [ 1.6,  5.0,0.95]
+if wide:
+    target_mins   = [0.8, 4.0,0.80 ]
+    target_maxs   = [2.1, 7.0,1.05 ]
+    target_init   = [1.45,5.5,0.925]
+else:
+    target_mins   = [1.1,3.8,0.84]
+    target_maxs   = [2.1,6.2,1.06]
+    target_init   = [1.6,5.0,0.95]
 
 def i2f(i,decimals=decimals):
     return float(i/10**decimals)
@@ -105,7 +117,6 @@ def f2i(f,decimals=decimals):
 class KSTARWidget(QDialog):
     def __init__(self, parent=None):
         super(KSTARWidget, self).__init__(parent)
-
         self.originalPalette = QApplication.palette()
         
         # Initial condition
@@ -116,23 +127,26 @@ class KSTARWidget(QDialog):
             self.outputs[p] = [0.]
         for p in dummy_params:
             self.dummy[p] = [0.]
-        self.x = np.zeros([10,21])
+        self.x = np.zeros([seq_len, 18])
         self.targets = {}
         for i,target_param in enumerate(target_params):
-            self.targets[target_param] = [target_init[i],target_init[i]]
+            self.targets[target_param] = [target_init[i], target_init[i]]
+        self.new_action = np.array(low_action)
+        self.histories = [list(low_action) + list(target_init)] * lookback
+        self.img = plt.imread(kstar_img_path)
 
         # Load models
-        self.k2rz = k2rz(model_path=k2rz_model_path, n_models=max_shape_models)
         if steady_model:
             self.kstar_nn = kstar_nn(model_path=nn_model_path, n_models=max_models)
         else:
             self.kstar_nn = kstar_nn(model_path=nn_model_path, n_models=1)
-            self.kstar_lstm = kstar_lstm(model_path=lstm_model_path, n_models=max_models)
+            self.kstar_lstm = kstar_v220505(model_path=lstm_model_path, n_models=max_models)
+        self.k2rz = k2rz(model_path=k2rz_model_path, n_models=max_shape_models)
         self.bpw_nn = bpw_nn(model_path=bpw_model_path, n_models=max_models)
         
         # Load agents
-        self.designer_1s = SB2_model(
-            model_path = rl_1s_model_path, 
+        self.rl_model = SB2_model(
+            model_path = rl_model_path, 
             low_state = low_state, 
             high_state = high_state, 
             low_action = low_action, 
@@ -140,29 +154,7 @@ class KSTARWidget(QDialog):
             activation='relu', 
             last_actv='tanh', 
             norm=True, 
-            bavg=bavg
-        )
-        self.designer_2s = SB2_model(
-            model_path = rl_2s_model_path,      
-            low_state = low_state,
-            high_state = high_state,
-            low_action = low_action,
-            high_action = high_action,
-            activation='relu',
-            last_actv='tanh',
-            norm=True,
-            bavg=bavg
-        )
-        self.rl_k2x = SB2_model(
-            model_path = rl_k2x_model_path,
-            low_state = low_state_k2x, 
-            high_state = high_state_k2x, 
-            low_action = low_action_k2x, 
-            high_action = high_action_k2x, 
-            activation='relu', 
-            last_actv='tanh', 
-            norm=True, 
-            bavg=bavg
+            bavg=0.0
         )
 
         # Top layout
@@ -176,13 +168,12 @@ class KSTARWidget(QDialog):
         self.resetModelNumber()
         self.nModelBox.valueChanged.connect(self.resetModelNumber)
         
-        intervalLabel = QLabel(' Control/Relax interval [0.1s]:')
-        self.intervalBox = QSpinBox()
-        self.intervalBox.setMinimum(2)
-        self.intervalBox.setMaximum(interval)
-        self.intervalBox.setValue(interval)
-        self.intervalBox.valueChanged.connect(self.resetInterval)
-        self.resetInterval()
+        dampLabel = QLabel('Damp factor:')
+        self.dampBox = QDoubleSpinBox()
+        self.dampBox.setMinimum(0)
+        self.dampBox.setMaximum(1)
+        self.dampBox.setValue(0.0)
+        self.dampBox.valueChanged.connect(self.resetDampFactor)
 
         self.rtRunPushButton = QPushButton('Run')
         self.rtRunPushButton.setCheckable(True)
@@ -204,19 +195,20 @@ class KSTARWidget(QDialog):
         self.overplotCheckBox.setChecked(True)
         self.overplotCheckBox.stateChanged.connect(self.rePlotOutputBox)
 
-        self.showInputCheckBox = QCheckBox('Show input panel')
-        self.showInputCheckBox.setChecked(False)
+        self.testButton = QPushButton('Test control')
+        self.testButton.setFixedWidth(120)
+        self.testButton.clicked.connect(self.test1)
 
         topLayout.addWidget(nModelLabel)
         topLayout.addWidget(self.nModelBox)
-        topLayout.addWidget(intervalLabel)
-        topLayout.addWidget(self.intervalBox)
+        topLayout.addWidget(dampLabel)
+        topLayout.addWidget(self.dampBox)
         #topLayout.addWidget(self.rtRunPushButton)
         topLayout.addWidget(self.shuffleModelPushButton)
         topLayout.addWidget(self.plotHeatingCheckBox)
         topLayout.addWidget(self.plotHeatLoadCheckBox)
         topLayout.addWidget(self.overplotCheckBox)
-        #topLayout.addWidget(self.showInputCheckBox)
+        topLayout.addWidget(self.testButton)
 
         # Middle layout
         self.createInputBox()
@@ -224,36 +216,45 @@ class KSTARWidget(QDialog):
         self.createAutonomousBox()
 
         # Bottom layout
-        self.run1sButton = QPushButton('▶▶ 1s ▶▶')
-        self.run1sButton.setFixedWidth(320)
+        self.run1sButton = QPushButton('Relax 1s')
+        self.run1sButton.setFixedWidth(200)
         self.run1sButton.clicked.connect(self.relaxRun1s)
-        self.run2sButton = QPushButton('▶▶ 2s ▶▶')
-        self.run2sButton.setFixedWidth(320)
-        self.run2sButton.clicked.connect(self.relaxRun2s)
+        self.control1sButton = QPushButton('Control 1s')
+        self.control1sButton.setFixedWidth(200)
+        self.control1sButton.clicked.connect(self.control1s)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(self.run1sButton)
+        buttonLayout.addWidget(self.control1sButton)
         self.dumpButton = QPushButton('Dump outputs')
-        self.dumpButton.setFixedWidth(800)
+        self.dumpButton.setFixedWidth(320 if show_inputs else 400)
         self.dumpButton.clicked.connect(self.dumpOutput)
         self.autoButton = QPushButton('AI control')
         self.autoButton.setFixedWidth(120)
-        self.autoButton.clicked.connect(self.autoControl)
+        self.autoButton.clicked.connect(self.updateTargets)
 
         # Main layout
         self.mainLayout = QGridLayout()
-
-        self.mainLayout.addLayout(topLayout,0,0,1,2)
-        if self.showInputCheckBox.isChecked():
+        self.mainLayout.addLayout(topLayout,0,0,1,3+show_inputs)
+        if show_inputs:
             self.mainLayout.addWidget(self.inputBox,1,0)
-        self.mainLayout.addWidget(self.outputBox,1,0+self.showInputCheckBox.isChecked(),1,2)
-        self.mainLayout.addWidget(self.autonomousBox,1,2+self.showInputCheckBox.isChecked())
-        #self.mainLayout.addWidget(self.run1sButton,2,0)
-        #self.mainLayout.addWidget(self.run2sButton,2,1)
+            self.run1sButton.setFixedWidth(400)
+            self.control1sButton.setFixedWidth(400)
+            self.mainLayout.addWidget(self.run1sButton,2,1)
+            self.mainLayout.addWidget(self.control1sButton,2,2)
+        else:
+            self.mainLayout.addLayout(buttonLayout,2,1+show_inputs)
+        self.mainLayout.addWidget(self.outputBox,1,0+show_inputs,1,2)
+        self.mainLayout.addWidget(self.autonomousBox,1,2+show_inputs)
         self.mainLayout.addWidget(self.dumpButton,2,0)
-        self.mainLayout.addWidget(self.autoButton,2,2)
+        self.mainLayout.addWidget(self.autoButton,2,2+show_inputs)
         
         self.setLayout(self.mainLayout)
-
-        self.setWindowTitle("AI-controlled KSTAR tokamak v1")
+        self.setWindowTitle("Real-time AI-controlled KSTAR tokamak v2")
+        
         self.tmp = 0
+        self.t_delay = t_delay
+        self.plotRT = True
+        self.updateTargets()
 
     def resetModelNumber(self):
         if steady_model:
@@ -263,9 +264,8 @@ class KSTARWidget(QDialog):
         self.bpw_nn.nmodels = self.nModelBox.value()
         #self.k2rz.nmodels = self.nModelBox.value()
 
-    def resetInterval(self):
-        self.interval = self.intervalBox.value()
-        self.designer = self.designer_1s if self.interval < 15 else self.designer_2s
+    def resetDampFactor(self):
+        self.rl_model.bavg = self.dampBox.value()
 
     def createInputBox(self):
         self.inputBox = QGroupBox('Input parameters')
@@ -276,7 +276,7 @@ class KSTARWidget(QDialog):
         for input_param in input_params:
             idx = input_params.index(input_param)
             inputLabel = QLabel(input_param)
-            self.inputSliderDict[input_param] = QSlider(Qt.Horizontal) #, self.inputBox)
+            self.inputSliderDict[input_param] = QSlider(Qt.Horizontal)
             self.inputSliderDict[input_param].setMinimum(f2i(input_mins[idx]))
             self.inputSliderDict[input_param].setMaximum(f2i(input_maxs[idx]))
             self.inputSliderDict[input_param].setValue(f2i(input_init[idx]))
@@ -288,13 +288,11 @@ class KSTARWidget(QDialog):
             self.inputLayout.addWidget(self.inputSliderDict[input_param],idx,1)
             self.inputLayout.addWidget(self.inputValueLabelDict[input_param],idx,2)
 
-            #for widget in inputLabel,self.inputSliderDict[input_param],self.inputValueLabelDict[input_param]:
-            #    widget.setMaximumWidth(30)
-        self.runSlider = QSlider(Qt.Horizontal) #, self.inputBox)
+        self.runSlider = QSlider(Qt.Horizontal)
         self.runSlider.setMinimum(0)
         self.runSlider.setMaximum(100)
         self.runSlider.setValue(0)
-        self.runSlider.valueChanged.connect(self.updateInputs)
+        self.runSlider.valueChanged.connect(self.run1step)
         self.runLabel = QLabel('0.1s ▶')
         
         self.inputLayout.addWidget(QLabel('Run only'),len(input_params),0)
@@ -305,15 +303,15 @@ class KSTARWidget(QDialog):
         self.inputBox.setMaximumWidth(320)
         
     def updateInputs(self):
-        for input_param in input_params:
-            self.inputValueLabelDict[input_param].setText(f'{self.inputSliderDict[input_param].value()/10**decimals:.3f}')
-        if self.rtRunPushButton.isChecked() and time.time()-self.tmp>t_delay:
+        if show_inputs:
+            for input_param in input_params:
+                self.inputValueLabelDict[input_param].setText(f'{self.inputSliderDict[input_param].value()/10**decimals:.3f}')
+            #self.run1step()
+
+    def run1step(self):
+        if self.rtRunPushButton.isChecked() and time.time()-self.tmp>self.t_delay:
             self.reCreateOutputBox()
             self.tmp = time.time()
-
-    def updateInputs_without_plot(self):
-        if self.rtRunPushButton.isChecked() and time.time()-self.tmp>t_delay:
-            self.predict0d(steady=steady_model)
 
     def createOutputBox(self):
         self.outputBox = QGroupBox('AI control output')
@@ -339,16 +337,14 @@ class KSTARWidget(QDialog):
 
         self.outputBox.setLayout(self.layout)
         #self.mainLayout.replaceWidget(self.mainLayout.itemAtPosition(1,1).widget(),self.outputBox)
-        self.mainLayout.addWidget(self.outputBox,1,0+self.showInputCheckBox.isChecked(),1,2)
+        self.mainLayout.addWidget(self.outputBox,1,0+show_inputs,1,2)
 
     def rePlotOutputBox(self):
         self.reCreateOutputBox(predict=False)
 
     def createAutonomousBox(self):
         self.autonomousBox = QGroupBox('Target setting')
-
         layout = QGridLayout()
-
         self.targetSliderDict = {}
         self.targetValueLabelDict = {}
 
@@ -375,30 +371,22 @@ class KSTARWidget(QDialog):
     def updateTargets(self):
         for target_param in target_params:
             self.targetValueLabelDict[target_param].setText(f'{self.targetSliderDict[target_param].value()/10**decimals:.3f}')
+        self.autoControl()
+        if (time.time() - self.tmp > self.t_delay) & self.plotRT:
+            self.reCreateOutputBox()
+            self.tmp = time.time()
+        elif not self.plotRT:
+            self.predict0d(steady = self.first or steady_model)
 
     def autoControl(self):
-        idx_convert = [0, 12, 13, 14, 10, 11, 3, 4, 5]
         observation = np.zeros_like(low_state)
-        observation[:9] = [i2f(self.inputSliderDict[input_params[i]].value()) for i in idx_convert]
-        observation[9:12] = [self.outputs[output_params2[i]][-1] for i in [1, 4, 6]]
-        observation[12:] = [i2f(self.targetSliderDict[target_params[i]].value()) for i in [0, 1, 2]]
-        new_action = self.designer.predict(observation)
-
-        current_action = [i2f(self.inputSliderDict[input_params[i]].value()) for i in idx_convert]
-        daction = (new_action - current_action) / self.interval
-        for i in range(self.interval): # Control phase
-            current_action += daction
-            current_action[6:] = new_action[6:] # Step function for NBIs
-            for i, idx in enumerate(idx_convert):
-                self.inputSliderDict[input_params[idx]].setValue(f2i(current_action[i]))
-            time.sleep(t_delay)
-        for i in range(self.interval): # Relaxation phase
-            #self.reCreateOutputBox()
-            #time.sleep(t_delay)
-            if i < self.interval - 1:
-                self.predict0d(steady=False)
-            else:
-                self.reCreateOutputBox()
+        for i in range(lookback):
+            observation[i * len(self.histories[0]) : (i + 1) * len(self.histories[0])] = self.histories[i]
+        observation[lookback * len(self.histories[0]) :] = [i2f(self.targetSliderDict[target_params[i]].value()) for i in [0, 1, 2]]
+        self.new_action = self.rl_model.predict(observation, yold=self.new_action)
+        idx_convert = [0, 3, 4, 5, 12, 13, 14, 10, 11]
+        for i, idx in enumerate(idx_convert):
+            self.inputSliderDict[input_params[idx]].setValue(f2i(self.new_action[i]))
 
     def plotPlasma(self,predict=True):
         # Predict plasma
@@ -441,8 +429,8 @@ class KSTARWidget(QDialog):
         plt.step(ts,0.1*pnb,'grey',linewidth=2*(100/dpi),label='0.1*Pnb [MW]',where='mid')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
-        plt.ylim([0.1, 0.7])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
+        plt.ylim([0.1, 0.75])
         plt.xticks(color='w')
 
         plt.subplot(3,3,5)
@@ -451,66 +439,52 @@ class KSTARWidget(QDialog):
         plt.plot(ts,self.dummy['Lo.Tri. [-]'],'grey',linewidth=2*(100/dpi),label='Lo.Tri.')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
         plt.ylim([0.15, 1])
         plt.xticks(color='w')
 
         plt.subplot(3,3,8)
-        plt.plot(ts,np.array(self.dummy['In.Mid. [m]']) - 1.265,'k',linewidth=2*(100/dpi),label='Ingap [m]')
-        plt.plot(ts,2.316 - np.array(self.dummy['Out.Mid. [m]']),'grey',linewidth=2*(100/dpi),label='Outgap [m]')
+        plt.plot(ts,np.array(self.dummy['In.Mid. [m]']) - 1.265,'k',linewidth=2*(100/dpi),label='In.Gap [m]')
+        plt.plot(ts,2.316 - np.array(self.dummy['Out.Mid. [m]']),'grey',linewidth=2*(100/dpi),label='Out.Gap [m]')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
         plt.ylim([0, 0.14])
         plt.xlabel('Relative time [s]')
 
         # Plot 0D evolution
         alpha = 0.5
-        period = 2 * 0.1 * self.interval
-        is_relax = ts % period > 0.5 * period
+        gaps = 0.5 * np.subtract(target_maxs, target_mins)
         
         plt.subplot(3,3,3)
         plt.title('Response and target')
         plt.plot(ts,self.outputs['βp'],'k',linewidth=2*(100/dpi),label='βp')
-        #plt.plot(ts,self.targets['βp'],'k',linestyle='--',linewidth=2*(100/dpi),label='Target')
-        for i in range(int((max(ts) - min(ts)) / period) + 1):
-            label = 'Target' if i == 0 else None
-            plt.plot(ts[::-1][2 * i * self.interval + 1 : (2 * i + 1) * self.interval], self.targets['βp'][::-1][2 * i * self.interval + 1: (2 * i + 1) * self.interval], 'b', alpha=alpha, linewidth=4*(100/dpi), label=label)
+        plt.plot(ts,self.targets['βp'],'b',alpha=alpha,linestyle='-',linewidth=4*(100/dpi),label='Target')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
-        gap = 0.1*(target_maxs[0] - target_mins[0])
-        plt.ylim([target_mins[0] - gap, target_maxs[0] + gap])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
+        plt.ylim([target_mins[0] - gaps[0], target_maxs[0] + gaps[0]])
         plt.xticks(color='w')
 
         plt.subplot(3,3,6)
         plt.plot(ts,self.outputs['q95'],'k',linewidth=2*(100/dpi),label='q95')
-        #plt.plot(ts,self.targets['q95'],'k',linestyle='--',linewidth=2*(100/dpi),label='Target')
-        for i in range(int((max(ts) - min(ts)) / period) + 1):
-            label = 'Target' if i == 0 else None
-            plt.plot(ts[::-1][2 * i * self.interval + 1: (2 * i + 1) * self.interval], self.targets['q95'][::-1][2 * i * self.interval + 1: (2 * i + 1) * self.interval], 'b', alpha=alpha, linewidth=4*(100/dpi), label=label)
+        plt.plot(ts,self.targets['q95'],'b',alpha=alpha,linestyle='-',linewidth=4*(100/dpi),label='Target')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
-        gap = 0.1*(target_maxs[1] - target_mins[1])
-        plt.ylim([target_mins[1] - gap, target_maxs[1] + gap])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
+        plt.ylim([target_mins[1] - gaps[1], target_maxs[1] + gaps[1]])
         plt.xticks(color='w')
 
         plt.subplot(3,3,9)
         plt.plot(ts,self.outputs['li'],'k',linewidth=2*(100/dpi),label='li')
-        #plt.plot(ts,self.targets['li'],'k',linestyle='--',linewidth=2*(100/dpi),label='Target')
-        for i in range(int((max(ts) - min(ts)) / period) + 1):
-            label = 'Target' if i == 0 else None
-            plt.plot(ts[::-1][2 * i * self.interval + 1: (2 * i + 1) * self.interval], self.targets['li'][::-1][2 * i * self.interval + 1: (2 * i + 1) * self.interval], 'b', alpha=alpha, linewidth=4*(100/dpi), label=label)
+        plt.plot(ts,self.targets['li'],'b',alpha=alpha,linestyle='-',linewidth=4*(100/dpi),label='Target')
         plt.grid(linewidth=0.5*(100/dpi))
         plt.legend(loc='upper left',fontsize=7.5*(100/dpi),frameon=False)
-        plt.xlim([-0.1*plot_length-0.2,0.2])
-        gap = 0.1*(target_maxs[2] - target_mins[2])
-        plt.ylim([target_mins[2] - gap, target_maxs[2] + gap])
+        plt.xlim([-0.1 * plot_length - 0.2, 0.2])
+        plt.ylim([target_mins[2] - gaps[2], target_maxs[2] + gaps[2]])
 
         plt.xlabel('Relative time [s]')
         plt.tight_layout(h_pad=0., rect=(0.05,0.05,0.95,0.95))
-
         self.first = False
 
     def predictBoundary(self):
@@ -524,21 +498,17 @@ class KSTARWidget(QDialog):
         dl = self.inputSliderDict[input_params[14]].value()/10**decimals
 
         self.k2rz.set_inputs(ip,bt,bp,rin,rout,k,du,dl)
-        self.rbdry,self.zbdry = self.k2rz.predict(post=True)
-        self.rx1 = self.rbdry[np.argmin(self.zbdry)]
-        self.zx1 = np.min(self.zbdry)
-        self.rx2 = self.rx1
-        self.zx2 = -self.zx1
+        self.rbdry, self.zbdry = self.k2rz.predict(post=True)
+        self.rx1, self.zx1 = self.rbdry[np.argmin(self.zbdry)], np.min(self.zbdry)
+        self.rx2, self.zx2 = self.rx1, -self.zx1
 
-    def plotXpoints(self,mode=0,zorder=100):
-        if mode==0:
-            self.rx1 = self.rbdry[np.argmin(self.zbdry)]
-            self.zx1 = np.min(self.zbdry)
-            self.rx2 = self.rx1
-            self.zx2 = -self.zx1
+    def plotXpoints(self, method=0, zorder=100):
+        if method == 0:
+            self.rx1, self.zx1 = self.rbdry[np.argmin(self.zbdry)], np.min(self.zbdry)
+            self.rx2, self.zx2 = self.rx1, -self.zx1
         plt.scatter([self.rx1,self.rx2],[self.zx1,self.zx2],marker='x',color='w',s=100*(100/dpi)**2,linewidths=2*(100/dpi),label='X-points',zorder=zorder)
 
-    def plotHeatLoads(self,n=10,both_side=True):
+    def plotHeatLoads(self, n=10, both_side=True):
         kinds = ['linear','quadratic'] #,'cubic']
         wallPath = Path(np.array([Rwalls,Zwalls]).T)
         idx1 = list(self.zbdry).index(self.zx1)
@@ -578,8 +548,7 @@ class KSTARWidget(QDialog):
         plt.plot([self.rx1],[self.zx1],'r',linewidth=1*(100/dpi),label='Heat load')
 
     def plotBackground(self):
-        img = plt.imread(background_path)
-        plt.imshow(img,extent=[-1.6,2.45,-1.5,1.35])
+        plt.imshow(self.img,extent=[-1.6,2.45,-1.5,1.35])
 
     def plotHeating(self):
         pnb1a = self.inputSliderDict['Pnb1a [MW]'].value()/10**decimals
@@ -595,11 +564,10 @@ class KSTARWidget(QDialog):
         w,h = 0.13,0.45
         plt.fill_between([rt1-w/2,rt1+w/2],[-h/2,-h/2],[h/2,h/2],color='g',alpha=0.9 if pnb1a>=0.5 else 0.3)
         plt.fill_between([rt2-w/2,rt2+w/2],[-h/2,-h/2],[h/2,h/2],color='g',alpha=0.9 if pnb1b>=0.5 else 0.3)
-        plt.fill_between([rt3-w/2,rt3+w/2],[-h/2,-h/2],[h/2,h/2],color='g',alpha=0.9 if pnb1c>=0.5 else 0.3\
-                         ,label='NBI')
+        plt.fill_between([rt3-w/2,rt3+w/2],[-h/2,-h/2],[h/2,h/2],color='g',alpha=0.9 if pnb1c>=0.5 else 0.3,label='NBI')
 
         for ns in [1,2,3]:
-            rs = 1.60219e-19*1.8*bt/(2.*np.pi*9.10938e-31*ec_freq)*ns
+            rs = 1.60219e-19*1.8*bt/(2*np.pi*9.10938e-31*ec_freq)*ns
             if min(Rwalls)<rs<max(Rwalls):
                 break
         dz = 0.05
@@ -608,8 +576,7 @@ class KSTARWidget(QDialog):
         plt.fill_between([rs,rpos],[zres-dz,zpos],[zres+dz,zpos],color='orange',alpha=0.9 if pec2>0.2 else 0.3)
         rpos,zpos = 2.451,-0.35
         zres = zpos + (zec3/100-zpos)*(rs-rpos)/(1.8-rpos)
-        plt.fill_between([rs,rpos],[zres-dz,zpos],[zres+dz,zpos],color='orange',alpha=0.9 if pec3>0.2 else 0.3,\
-                         label='ECH')
+        plt.fill_between([rs,rpos],[zres-dz,zpos],[zres+dz,zpos],color='orange',alpha=0.9 if pec3>0.2 else 0.3,label='ECH')
 
     def predict0d(self,steady=True):
         # Predict output_params0 (βn, q95, q0, li)
@@ -629,14 +596,20 @@ class KSTARWidget(QDialog):
                     self.outputs[output_params0[i]][0] = y[i]
                 self.outputs[output_params0[i]].append(y[i])
             self.x[:,:len(output_params0)] = y
-            self.x[:,len(output_params0):] = x
+            idx_convert = [0, 1, 2, 12, 13 ,14 ,10, 11, 3, 4, 5, 6, 10]
+            for i in range(len(self.x[0]) - 1 - 4):
+                self.x[:,i+4] = self.inputSliderDict[input_params[idx_convert[i]]].value()/10**decimals
+            self.x[:, 11 + 4] += self.inputSliderDict[input_params[7]].value()/10**decimals
+            self.x[:, 12 + 4] = 1 if self.x[-1, 12 + 4] > 1.265 + 1.e-4 else 0
+            self.x[:, -1] = year_in
+
         else:
             self.x[:-1,len(output_params0):] = self.x[1:,len(output_params0):]
-            idx_convert = [0,1,3,4,5,6,7,8,9,10,11,12,13,14,10,2]
+            idx_convert = [0, 1, 2, 12, 13 ,14 ,10, 11, 3, 4, 5, 6, 10]
             for i in range(len(self.x[0])-1-4):
                 self.x[-1,i+4] = self.inputSliderDict[input_params[idx_convert[i]]].value()/10**decimals
-            self.x[-1,13],self.x[-1,14] = 0.5*(self.x[-1,13]+self.x[-1,14]),0.5*(self.x[-1,14]-self.x[-1,13])
-            self.x[-1,18] = 1 if self.x[-1,18]>1.265+1.e-4 else 0
+            self.x[-1, 11 + 4] += self.inputSliderDict[input_params[7]].value()/10**decimals
+            self.x[-1, 12 + 4] = 1 if self.x[-1, 12 + 4] > 1.265 + 1.e-4 else 0
             y = self.kstar_lstm.predict(self.x)
             self.x[:-1,:len(output_params0)] = self.x[1:,:len(output_params0)]
             self.x[-1,:len(output_params0)] = y
@@ -671,13 +644,16 @@ class KSTARWidget(QDialog):
                 self.outputs[output_params1[i]][0] = y[i]
             self.outputs[output_params1[i]].append(y[i])
 
-        # Store dummy parameters (Ip)
+        # Store dummy parameters
         for p in dummy_params:
             if len(self.dummy[p]) >= plot_length:
                 del self.dummy[p][0]
             elif len(self.dummy[p]) == 1:
                 self.dummy[p][0] = i2f(self.inputSliderDict[p].value())
             self.dummy[p].append(i2f(self.inputSliderDict[p].value()))
+
+        self.histories[:-1] = self.histories[1:]
+        self.histories[-1] = list(self.new_action) + list([self.outputs['βp'][-1], self.outputs['q95'][-1], self.outputs['li'][-1]])
 
         # Estimate H factors (h89, h98)
         ip = self.inputSliderDict['Ip [MA]'].value()/10**decimals
@@ -692,8 +668,7 @@ class KSTARWidget(QDialog):
         rin = self.inputSliderDict['In.Mid. [m]'].value()/10**decimals
         rout = self.inputSliderDict['Out.Mid. [m]'].value()/10**decimals
         k = self.inputSliderDict['Elon. [-]'].value()/10**decimals
-
-        rgeo,amin = 0.5*(rin+rout),0.5*(rout-rin)
+        rgeo, amin = 0.5*(rin+rout), 0.5*(rout-rin)
         ne = fgw*10*(ip/(np.pi*amin**2))
         m = 2.0 # Mass number
 
@@ -725,11 +700,21 @@ class KSTARWidget(QDialog):
         self.reCreateOutputBox()
         self.tmp = time.time()
 
-    def relaxRun2s(self):
-        for i in range(20 - 1):
+    def control1s(self):
+        for i in range(10 - 1):
+            self.autoControl()
             self.predict0d(steady = self.first or steady_model)
-        self.reCreateOutputBox()
+        self.updateTargets()
         self.tmp = time.time()
+
+    def test1(self):
+        self.plotRT = False
+        for i, target_param in enumerate(target_params):
+            for level in [0.667, 0.833, 1.0, 0.833, 0.667, 0.5, 0.333, 0.167, 0.0, 0.167, 0.333, 0.5]:
+                target_value = target_mins[i] + level * (target_maxs[i] - target_mins[i])
+                self.targetSliderDict[target_param].setValue(f2i(target_value))
+        self.reCreateOutputBox(predict=False)
+        self.plotRT = True
 
     def dumpOutput(self):
         print('\nTrajectories:')
@@ -741,17 +726,6 @@ class KSTARWidget(QDialog):
         print('\nCurrent operation control by AI:')
         for input_param in input_params:
             print(f'{input_param}: {i2f(self.inputSliderDict[input_param].value())}')
-
-    def autoRun05(self):
-        for i in range(1):
-            self.autoAction()
-            #time.sleep(t_delay)
-            #if self.first or steady_model:
-            #    self.predict0d(steady=True)
-            #else:
-            #    self.predict0d(steady=False)
-        #self.reCreateOutputBox()
-        self.tmp = time.time()
 
 
 if __name__ == '__main__':

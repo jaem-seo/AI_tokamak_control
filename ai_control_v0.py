@@ -33,7 +33,9 @@ from PyQt5.QtWidgets import QApplication,\
                             QSpinBox,\
                             QDoubleSpinBox
 from scipy import interpolate
-from model_structure import *
+from common.model_structure import *
+from common.wall import *
+from common.setting import *
 
 # Setting
 base_path = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -58,6 +60,9 @@ bavg = 0.0
 year_in = 2021
 ec_freq = 105.e9
 
+# Matplotlib rcParams setting
+rcParamsSetting(dpi)
+
 # RL setting
 interval = 20
 low_state   = [0.35, 1.68, 0.2, 0.5, 1.265, 2.18, 1.1, 3.8, 0.84, 1.1, 3.8, 0.84, 1.15, 1.15, 0.45]
@@ -68,42 +73,6 @@ low_state_k2x   = [0.4, 0.5, 1.265, 2.18, 1.6, 0.1, 0.55]
 high_state_k2x  = [0.8, 3.0, 1.34, 2.29, 1.9, 0.5, 0.95]
 low_action_k2x  = [1.35, 0.7, -0.05]
 high_action_k2x = [1.60, 1.05, 0.0]
-
-'''
-# test
-rl_designer_model_path = '/home/sjm4976/RL/multi_0d/single_step/bp_q95_li/afterexp/ens4_wonoise/0/logs/best_model.zip'
-low_state = [0.35,1.65,0.15,0.5,1.265,2.18,1.1,3.8,0.84,1.1,3.8,0.84,1.15,1.15,0.45]
-high_state = [0.75,1.9,0.5,0.85,1.36,2.29,2.1,6.2,1.06,2.1,6.2,1.06,1.75,1.75,0.6]
-low_action = [0.35,1.65,0.15,0.5,1.265,2.18]
-high_action = [0.75,1.9,0.5,0.85,1.36,2.29]
-'''
-
-# Matplotlib rcParams setting
-matplotlib.rcParams['axes.linewidth']=1.*(100/dpi)
-matplotlib.rcParams['axes.labelsize']=10*(100/dpi)
-matplotlib.rcParams['axes.titlesize']=10*(100/dpi)
-matplotlib.rcParams['xtick.labelsize']=10*(100/dpi)
-matplotlib.rcParams['ytick.labelsize']=10*(100/dpi)
-matplotlib.rcParams['xtick.major.size']=3.5*(100/dpi)
-matplotlib.rcParams['xtick.major.width']=0.8*(100/dpi)
-matplotlib.rcParams['xtick.minor.size']=2*(100/dpi)
-matplotlib.rcParams['xtick.minor.width']=0.6*(100/dpi)
-matplotlib.rcParams['ytick.major.size']=3.5*(100/dpi)
-matplotlib.rcParams['ytick.major.width']=0.8*(100/dpi)
-matplotlib.rcParams['ytick.minor.size']=2*(100/dpi)
-matplotlib.rcParams['ytick.minor.width']=0.6*(100/dpi)
-
-# Wall in KSTAR
-Rwalls = np.array([1.265, 1.608, 1.683, 1.631, 1.578, 1.593, 1.626, 2.006,
-                   2.233, 2.235, 2.263, 2.298, 2.316, 2.316, 2.298, 2.263,
-                   2.235, 2.233, 2.006, 1.626, 1.593, 1.578, 1.631, 1.683,
-                   1.608, 1.265, 1.265
-                   ])
-Zwalls = np.array([1.085, 1.429, 1.431, 1.326, 1.32, 1.153, 1.09, 0.773,
-                   0.444, 0.369, 0.31, 0.189, 0.062, -0.062, -0.189, -0.31,
-                   -0.369, -0.444, -0.773, -1.09, -1.153, -1.32, -1.326, -1.431,
-                   -1.429, -1.085, 1.085
-                   ])
 
 # Inputs
 input_params = ['Ip [MA]','Bt [T]','GW.frac. [-]',\
