@@ -50,5 +50,5 @@ $ python rt_control_v2.py
 - S. Fujimoto et al. ["Addressing Function Approximation Error in Actor-Critic Methods."](https://arxiv.org/abs/1802.09477) ICML (2018).
 - M. Andrychowicz et al. ["Hindsight Experience Replay."](https://arxiv.org/abs/1707.01495) NIPS (2017).
 - J. Seo, ["KSTAR tokamak simulator."](https://github.com/jaem-seo/KSTAR_tokamak_simulator) GitHub repository (2022).
-- J. Seo, et al. "Feedforward beta control in the KSTAR tokamak by deep reinforcement learning." Nuclear Fusion [61.10 (2021): 106010.](https://iopscience.iop.org/article/10.1088/1741-4326/ac121b/meta)
-- J. Seo, et al. Nuclear Fusion (2022) (In review).
+- J. Seo, et al. "Feedforward beta control in the KSTAR tokamak by deep reinforcement learning." Nuclear Fusion [61 (2021): 106010.](https://iopscience.iop.org/article/10.1088/1741-4326/ac121b/meta)
+- J. Seo, et al. "Development of an operation trajectory design algorithm for control of multiple 0D parameters using deep reinforcement learning in KSTAR." Nuclear Fusion [62 (2022): 086049.](https://iopscience.iop.org/article/10.1088/1741-4326/ac79be/meta)
